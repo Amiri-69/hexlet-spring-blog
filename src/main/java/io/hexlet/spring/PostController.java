@@ -5,6 +5,8 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/posts")
@@ -12,31 +14,47 @@ public class PostController {
 
     private List<Post> posts = new ArrayList<>();
 
-    @GetMapping
-    public List<Post> index() {
-        return posts;
+    @GetMapping("/posts")
+    public ResponseEntity<List<Post>> index() {
+        return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(posts.size()))
+                .body(posts);
     }
 
-    @GetMapping("/{id}")
-    public Post show(@PathVariable int id) {
-        return posts.get(id);
+    @GetMapping("/posts/{id}")
+    public ResponseEntity<Post> show(@PathVariable String id) {
+        return posts.stream()
+                .filter(p -> p.getId().equals(id))
+                .findFirst()
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
-    public Post create(@RequestBody Post post) {
-        post.setCreatedAt(LocalDateTime.now());
+    @PostMapping("/posts")
+    public ResponseEntity<Post> create(@RequestBody Post post) {
         posts.add(post);
-        return post;
+        return ResponseEntity.status(HttpStatus.CREATED).body(post);
     }
 
-    @PutMapping("/{id}")
-    public Post update(@PathVariable int id, @RequestBody Post post) {
-        posts.set(id, post);
-        return post;
+    @PutMapping("/posts/{id}")
+    public ResponseEntity<Post> update(@PathVariable String id, @RequestBody Post post) {
+        for (int i = 0; i < posts.size(); i++) {
+            if (posts.get(i).getId().equals(id)) {
+                posts.set(i, post);
+                return ResponseEntity.ok(post);
+            }
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable int id) {
-        posts.remove(id);
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        boolean removed = posts.removeIf(p -> p.getId().equals(id));
+
+        if (removed) {
+            return ResponseEntity.noContent().build(); // 204
+        }
+
+        return ResponseEntity.notFound().build(); // 404
     }
 }
