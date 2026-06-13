@@ -1,60 +1,83 @@
 package io.hexlet.spring;
 
 import io.hexlet.spring.model.Post;
-import org.springframework.web.bind.annotation.*;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import io.hexlet.spring.repository.PostRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
 
 @RestController
-@RequestMapping("/posts")
+@RequestMapping("/api/posts")
 public class PostController {
 
-    private List<Post> posts = new ArrayList<>();
+    private final PostRepository postRepository;
 
-    @GetMapping("/posts")
-    public ResponseEntity<List<Post>> index() {
-        return ResponseEntity.ok()
-                .header("X-Total-Count", String.valueOf(posts.size()))
-                .body(posts);
+    public PostController(PostRepository postRepository) {
+        this.postRepository = postRepository;
     }
 
-    @GetMapping("/posts/{id}")
-    public ResponseEntity<Post> show(@PathVariable String id) {
-        return posts.stream()
-                .filter(p -> p.getId().equals(id))
-                .findFirst()
+    // GET all posts
+    @GetMapping
+    public Page<Post> index(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ) {
+
+        var pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Order.desc("createdAt"))
+        );
+
+        return postRepository.findAllByPublishedTrue(pageable);
+    }
+
+    // GET post by id
+    @GetMapping("/{id}")
+    public ResponseEntity<Post> show(@PathVariable Long id) {
+        return postRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/posts")
+    // CREATE post
+    @PostMapping
     public ResponseEntity<Post> create(@RequestBody Post post) {
-        posts.add(post);
-        return ResponseEntity.status(HttpStatus.CREATED).body(post);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(postRepository.save(post));
     }
 
-    @PutMapping("/posts/{id}")
-    public ResponseEntity<Post> update(@PathVariable String id, @RequestBody Post post) {
-        for (int i = 0; i < posts.size(); i++) {
-            if (posts.get(i).getId().equals(id)) {
-                posts.set(i, post);
-                return ResponseEntity.ok(post);
-            }
-        }
-        return ResponseEntity.notFound().build();
+    // UPDATE post
+    @PutMapping("/{id}")
+    public ResponseEntity<Post> update(@PathVariable Long id,
+                                       @RequestBody Post updatedPost) {
+
+        return postRepository.findById(id)
+                .map(post -> {
+                    post.setTitle(updatedPost.getTitle());
+                    post.setContent(updatedPost.getContent());
+                    post.setPublished(updatedPost.isPublished());
+
+                    return ResponseEntity.ok(postRepository.save(post));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
+    // DELETE post
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
-        boolean removed = posts.removeIf(p -> p.getId().equals(id));
-
-        if (removed) {
-            return ResponseEntity.noContent().build(); // 204
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        if (!postRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.notFound().build(); // 404
+        postRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

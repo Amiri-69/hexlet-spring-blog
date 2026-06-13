@@ -1,42 +1,33 @@
 package io.hexlet.spring;
 
 import io.hexlet.spring.model.User;
+import io.hexlet.spring.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.ArrayList;
+import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
-    private List<User> users = new ArrayList<>();
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping
     public List<User> index() {
-        return users;
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<User> show(@PathVariable String id) {
-        return users.stream()
-                .filter(u -> u.getId().equals(id))
-                .findFirst()
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return userRepository.findAll();
     }
 
     @PostMapping
-    public ResponseEntity<User> create(@RequestBody User user) {
-        users.add(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(user);
+    public User create(@RequestBody @Valid User user) {
+        return userRepository.save(user);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
-        users.removeIf(u -> u.getId().equals(id));
-        return ResponseEntity.noContent().build();
+    public void delete(@PathVariable Long id) {
+        userRepository.deleteById(id);
     }
 }
