@@ -1,3 +1,5 @@
+![CI](https://github.com/Amiri-69/hexlet-spring-blog/actions/workflows/ci.yml/badge.svg)
+
 # Hexlet Spring Blog
 
 Учебный проект на Spring Boot.
