@@ -21,13 +21,47 @@ public class UserController {
         return userRepository.findAll();
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<User> show(@PathVariable Long id) {
+        return userRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping
-    public User create(@RequestBody @Valid User user) {
-        return userRepository.save(user);
+    public ResponseEntity<User> create(@RequestBody @Valid User user) {
+        User saved = userRepository.save(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<User> update(
+            @PathVariable Long id,
+            @RequestBody @Valid User updatedUser) {
+
+        return userRepository.findById(id)
+                .map(user -> {
+
+                    user.setName(updatedUser.getName());
+                    user.setEmail(updatedUser.getEmail());
+
+                    return ResponseEntity.ok(
+                            userRepository.save(user)
+                    );
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+
+        if (!userRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+
         userRepository.deleteById(id);
+
+        return ResponseEntity.noContent().build();
     }
+
 }

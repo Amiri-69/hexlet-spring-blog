@@ -9,14 +9,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 @RestControllerAdvice
-public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<String> handleValidation(MethodArgumentNotValidException ex) {
 
-        String message = ex.getBindingResult()
-                .getFieldError()
-                .getDefaultMessage();
+        var fieldError = ex.getBindingResult().getFieldError();
+
+        String message = fieldError != null
+                ? fieldError.getDefaultMessage()
+                : "Validation error";
 
         return ResponseEntity
                 .status(422)
