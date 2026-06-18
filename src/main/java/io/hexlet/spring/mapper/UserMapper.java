@@ -8,8 +8,14 @@ import io.hexlet.spring.dto.UserCreateDTO;
 import io.hexlet.spring.dto.UserUpdateDTO;
 import io.hexlet.spring.dto.UserDTO;
 import io.hexlet.spring.model.User;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
-@Mapper(componentModel = "spring")
+@Mapper(
+        componentModel = "spring",
+        uses = JsonNullableMapper.class,
+        nullValuePropertyMappingStrategy =
+                NullValuePropertyMappingStrategy.IGNORE
+)
 public interface UserMapper {
 
     UserDTO toDTO(User user);
