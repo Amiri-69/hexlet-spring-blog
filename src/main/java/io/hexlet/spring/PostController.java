@@ -1,7 +1,12 @@
 package io.hexlet.spring;
 
+import io.hexlet.spring.dto.PostPatchDTO;
+import io.hexlet.spring.dto.PostUpdateDTO;
 import io.hexlet.spring.model.Post;
+import io.hexlet.spring.model.User;
 import io.hexlet.spring.repository.PostRepository;
+import io.hexlet.spring.repository.UserRepository;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,6 +14,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.RequestParam;
+import io.hexlet.spring.dto.PostDTO;
+import io.hexlet.spring.mapper.PostMapper;
+import io.hexlet.spring.dto.PostCreateDTO;
 
 import java.util.List;
 
@@ -17,14 +25,19 @@ import java.util.List;
 public class PostController {
 
     private final PostRepository postRepository;
+    private final PostMapper postMapper;
+    private final UserRepository userRepository;
 
-    public PostController(PostRepository postRepository) {
+
+    public PostController(PostRepository postRepository, UserRepository userRepository, PostMapper postMapper) {
         this.postRepository = postRepository;
+        this.userRepository = userRepository;
+        this.postMapper = postMapper;
     }
 
     // GET all posts
     @GetMapping
-    public Page<Post> index(
+    public Page<PostDTO> index(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size
     ) {
@@ -35,37 +48,65 @@ public class PostController {
                 Sort.by(Sort.Order.desc("createdAt"))
         );
 
-        return postRepository.findAllByPublishedTrue(pageable);
+        return postRepository.findAllByPublishedTrue(pageable)
+                .map(postMapper::toDTO);
     }
 
     // GET post by id
     @GetMapping("/{id}")
-    public ResponseEntity<Post> show(@PathVariable Long id) {
+    public ResponseEntity<PostDTO> show(@PathVariable Long id) {
+
         return postRepository.findById(id)
-                .map(ResponseEntity::ok)
+                .map(post -> ResponseEntity.ok(
+                        postMapper.toDTO(post)
+                ))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     // CREATE post
     @PostMapping
-    public ResponseEntity<Post> create(@RequestBody Post post) {
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(postRepository.save(post));
+    public ResponseEntity<PostDTO> create(
+            @RequestBody PostCreateDTO dto
+    ) {
+
+        User user = userRepository
+                .findById(dto.getUserId())
+                .orElseThrow();
+
+        Post post = postMapper.toEntity(dto);
+
+        post.setUser(user);
+
+        postRepository.save(post);
+
+        return ResponseEntity.ok(
+                postMapper.toDTO(post)
+        );
     }
 
     // UPDATE post
     @PutMapping("/{id}")
-    public ResponseEntity<Post> update(@PathVariable Long id,
-                                       @RequestBody Post updatedPost) {
+    public ResponseEntity<PostDTO> update(
+            @PathVariable Long id,
+            @Valid @RequestBody PostUpdateDTO dto) {
 
         return postRepository.findById(id)
                 .map(post -> {
-                    post.setTitle(updatedPost.getTitle());
-                    post.setContent(updatedPost.getContent());
-                    post.setPublished(updatedPost.isPublished());
 
-                    return ResponseEntity.ok(postRepository.save(post));
+                    postMapper.updateEntityFromDTO(dto, post);
+
+                    User user = userRepository
+                            .findById(dto.getUserId())
+                            .orElseThrow();
+
+                    post.setUser(user);
+
+                    Post saved =
+                            postRepository.save(post);
+
+                    return ResponseEntity.ok(
+                            postMapper.toDTO(saved)
+                    );
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -79,5 +120,30 @@ public class PostController {
 
         postRepository.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+    @PatchMapping("/{id}")
+    public ResponseEntity<PostDTO> patch(
+            @PathVariable Long id,
+            @RequestBody PostPatchDTO dto) {
+
+        return postRepository.findById(id)
+                .map(post -> {
+
+                    postMapper.updateFromPatch(
+                            dto,
+                            post
+                    );
+
+                    Post saved =
+                            postRepository.save(post);
+
+                    return ResponseEntity.ok(
+                            postMapper.toDTO(saved)
+                    );
+                })
+                .orElse(
+                        ResponseEntity.notFound()
+                                .build()
+                );
     }
 }

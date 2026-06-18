@@ -7,21 +7,30 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<String> handleValidation(MethodArgumentNotValidException ex) {
+    public ResponseEntity<Map<String, String>>
+    handleValidationErrors(
+            MethodArgumentNotValidException ex) {
 
-        var fieldError = ex.getBindingResult().getFieldError();
+        Map<String, String> errors = new HashMap<>();
 
-        String message = fieldError != null
-                ? fieldError.getDefaultMessage()
-                : "Validation error";
+        ex.getBindingResult()
+                .getFieldErrors()
+                .forEach(error ->
+                        errors.put(
+                                error.getField(),
+                                error.getDefaultMessage()
+                        )
+                );
 
         return ResponseEntity
-                .status(422)
-                .body("Validation failed: " + message);
+                .unprocessableEntity()
+                .body(errors);
     }
 }

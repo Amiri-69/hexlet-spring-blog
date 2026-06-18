@@ -1,5 +1,6 @@
 package io.hexlet.spring.model;
-
+import io.hexlet.spring.model.Post;
+import java.util.List;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.persistence.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -8,6 +9,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.EntityListeners;
 import java.time.LocalDate;
+import java.util.ArrayList;
 
 @Entity
 @EntityListeners(AuditingEntityListener.class)
@@ -30,6 +32,13 @@ public class User {
 
     @LastModifiedDate
     private LocalDate updatedAt;
+
+    @OneToMany(
+            mappedBy = "user",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<Post> posts = new ArrayList<>();
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

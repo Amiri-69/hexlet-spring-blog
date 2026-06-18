@@ -45,8 +45,20 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-devtools")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.openapitools:jackson-databind-nullable:0.2.6")
 
     runtimeOnly("com.h2database:h2")
+
+
+    implementation("org.mapstruct:mapstruct:1.5.5.Final")
+
+    annotationProcessor(
+        "org.mapstruct:mapstruct-processor:1.5.5.Final"
+    )
+
+    testAnnotationProcessor(
+        "org.mapstruct:mapstruct-processor:1.5.5.Final"
+    )
 }
 
 tasks.test {
