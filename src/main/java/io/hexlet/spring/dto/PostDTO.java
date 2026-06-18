@@ -1,6 +1,7 @@
 package io.hexlet.spring.dto;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 public class PostDTO {
 
@@ -11,6 +12,7 @@ public class PostDTO {
     private LocalDate createdAt;
     private LocalDate updatedAt;
     private Long userId;
+    private Set<Long> tagIds;
 
     public Long getId() {
         return id;
@@ -65,5 +67,12 @@ public class PostDTO {
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+    public Set<Long> getTagIds() {
+        return tagIds;
+    }
+
+    public void setTagIds(Set<Long> tagIds) {
+        this.tagIds = tagIds;
     }
 }

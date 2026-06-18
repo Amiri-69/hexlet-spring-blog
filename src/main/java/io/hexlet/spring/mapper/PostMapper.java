@@ -1,6 +1,7 @@
 package io.hexlet.spring.mapper;
 
 import io.hexlet.spring.dto.PostPatchDTO;
+import io.hexlet.spring.model.Tag;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -10,6 +11,9 @@ import io.hexlet.spring.dto.PostUpdateDTO;
 import io.hexlet.spring.dto.PostDTO;
 import io.hexlet.spring.model.Post;
 import org.mapstruct.NullValuePropertyMappingStrategy;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Mapper(
         componentModel = "spring",
@@ -25,6 +29,7 @@ public interface PostMapper {
     );
 
     @Mapping(target = "userId", source = "user.id")
+    @Mapping(target = "tagIds", source = "tags")
     PostDTO toDTO(Post post);
 
     Post toEntity(PostCreateDTO dto);
@@ -33,4 +38,9 @@ public interface PostMapper {
             PostUpdateDTO dto,
             @MappingTarget Post post
     );
+    default Set<Long> mapTags(Set<Tag> tags) {
+        return tags.stream()
+                .map(Tag::getId)
+                .collect(Collectors.toSet());
+    }
 }

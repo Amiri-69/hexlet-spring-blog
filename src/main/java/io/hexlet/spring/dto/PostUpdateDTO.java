@@ -3,6 +3,9 @@ package io.hexlet.spring.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.util.Collection;
+import java.util.Set;
+
 public class PostUpdateDTO {
 
     @NotBlank
@@ -15,6 +18,7 @@ public class PostUpdateDTO {
 
     private Long userId;
 
+    private Set<Long> tagIds;
 
     public String getTitle() {
         return title;
@@ -37,5 +41,12 @@ public class PostUpdateDTO {
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public Set<Long> getTagIds() {
+        return tagIds;
+    }
+    public void setTagIds(Set<Long> tagIds) {
+        this.tagIds = tagIds;
     }
 }

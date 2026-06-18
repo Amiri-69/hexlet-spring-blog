@@ -6,11 +6,13 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import jakarta.persistence.EntityListeners;
 import java.time.LocalDate;
 import jakarta.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "posts")
-public class Post {
+public class Post implements BaseEntity {
 
 
     @Id
@@ -34,7 +36,19 @@ public class Post {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public Long getId() { return id; }
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "posts_tags",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+
+    private Set<Tag> tags = new HashSet<>();
+
+    @Override
+    public Long getId() {
+        return id;
+    }
     public void setId(Long id) { this.id = id; }
 
     public String getTitle() { return title; }
@@ -59,4 +73,13 @@ public class Post {
     public void setUser(User user) {
         this.user = user;
     }
+
+    public void setTags(Set<Tag> tags) {
+        this.tags = tags;
+    }
+    public Set<Tag> getTags() {
+        return tags;
+    }
+
+
 }

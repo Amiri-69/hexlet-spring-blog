@@ -1,12 +1,16 @@
 package io.hexlet.spring;
 
-import io.hexlet.spring.dto.PostPatchDTO;
-import io.hexlet.spring.dto.PostUpdateDTO;
+import io.hexlet.spring.dto.*;
 import io.hexlet.spring.model.Post;
+import io.hexlet.spring.model.Tag;
 import io.hexlet.spring.model.User;
 import io.hexlet.spring.repository.PostRepository;
+import io.hexlet.spring.repository.TagRepository;
 import io.hexlet.spring.repository.UserRepository;
+import io.hexlet.spring.service.PostService;
+import io.hexlet.spring.specification.PostSpecification;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,53 +18,50 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.RequestParam;
-import io.hexlet.spring.dto.PostDTO;
 import io.hexlet.spring.mapper.PostMapper;
-import io.hexlet.spring.dto.PostCreateDTO;
+import io.hexlet.spring.dto.PostPatchDTO;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/posts")
 public class PostController {
 
-    private final PostRepository postRepository;
-    private final PostMapper postMapper;
-    private final UserRepository userRepository;
 
+    @Autowired
+    private PostSpecification postSpecification;
+    private final PostService postService;
 
-    public PostController(PostRepository postRepository, UserRepository userRepository, PostMapper postMapper) {
-        this.postRepository = postRepository;
-        this.userRepository = userRepository;
-        this.postMapper = postMapper;
+    public PostController(
+            PostService postService
+    ) {
+        this.postService = postService;
     }
 
     // GET all posts
     @GetMapping
     public Page<PostDTO> index(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size
+            PostParamsDTO params,
+            @RequestParam(defaultValue = "1")
+            int page
     ) {
 
-        var pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by(Sort.Order.desc("createdAt"))
+        return postService.getAll(
+                params,
+                page
         );
-
-        return postRepository.findAllByPublishedTrue(pageable)
-                .map(postMapper::toDTO);
     }
-
     // GET post by id
     @GetMapping("/{id}")
-    public ResponseEntity<PostDTO> show(@PathVariable Long id) {
+    public ResponseEntity<PostDTO> show(
+            @PathVariable Long id
+    ) {
 
-        return postRepository.findById(id)
-                .map(post -> ResponseEntity.ok(
-                        postMapper.toDTO(post)
-                ))
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(
+                postService.findById(id)
+        );
     }
 
     // CREATE post
@@ -69,18 +70,8 @@ public class PostController {
             @RequestBody PostCreateDTO dto
     ) {
 
-        User user = userRepository
-                .findById(dto.getUserId())
-                .orElseThrow();
-
-        Post post = postMapper.toEntity(dto);
-
-        post.setUser(user);
-
-        postRepository.save(post);
-
         return ResponseEntity.ok(
-                postMapper.toDTO(post)
+                postService.create(dto)
         );
     }
 
@@ -88,62 +79,34 @@ public class PostController {
     @PutMapping("/{id}")
     public ResponseEntity<PostDTO> update(
             @PathVariable Long id,
-            @Valid @RequestBody PostUpdateDTO dto) {
+            @RequestBody PostUpdateDTO dto
+    ) {
 
-        return postRepository.findById(id)
-                .map(post -> {
-
-                    postMapper.updateEntityFromDTO(dto, post);
-
-                    User user = userRepository
-                            .findById(dto.getUserId())
-                            .orElseThrow();
-
-                    post.setUser(user);
-
-                    Post saved =
-                            postRepository.save(post);
-
-                    return ResponseEntity.ok(
-                            postMapper.toDTO(saved)
-                    );
-                })
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(
+                postService.update(id, dto)
+        );
     }
 
     // DELETE post
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (!postRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Void> delete(
+            @PathVariable Long id
+    ) {
 
-        postRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+        postService.delete(id);
+
+        return ResponseEntity.noContent()
+                .build();
     }
+
     @PatchMapping("/{id}")
     public ResponseEntity<PostDTO> patch(
             @PathVariable Long id,
-            @RequestBody PostPatchDTO dto) {
+            @RequestBody PostPatchDTO dto
+    ) {
 
-        return postRepository.findById(id)
-                .map(post -> {
-
-                    postMapper.updateFromPatch(
-                            dto,
-                            post
-                    );
-
-                    Post saved =
-                            postRepository.save(post);
-
-                    return ResponseEntity.ok(
-                            postMapper.toDTO(saved)
-                    );
-                })
-                .orElse(
-                        ResponseEntity.notFound()
-                                .build()
-                );
+        return ResponseEntity.ok(
+                postService.patch(id, dto)
+        );
     }
 }

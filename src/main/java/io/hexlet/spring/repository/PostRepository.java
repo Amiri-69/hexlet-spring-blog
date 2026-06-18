@@ -7,6 +7,10 @@ import org.springframework.data.domain.Pageable;
 
 
 
-public interface PostRepository extends JpaRepository<Post, Long> {
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+public interface PostRepository
+        extends JpaRepository<Post, Long>,
+        JpaSpecificationExecutor<Post> {
     Page<Post> findAllByPublishedTrue(Pageable pageable);
 }
