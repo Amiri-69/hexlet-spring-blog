@@ -49,29 +49,26 @@ public class PostService {
         return postMapper.toDTO(post);
     }
 
-    public PostDTO create(
-            PostCreateDTO dto
-    ) {
-
-        User user = userRepository
-                .findById(dto.getUserId())
-                .orElseThrow();
+    public PostDTO create(PostCreateDTO dto) {
 
         Post post = postMapper.toEntity(dto);
 
-        post.setUser(user);
+        if (dto.getUserId() != null) {
+            User user = userRepository
+                    .findById(dto.getUserId())
+                    .orElseThrow();
 
-        Set<Tag> tags =
-                dto.getTagIds()
-                        .stream()
-                        .map(tagId ->
-                                tagRepository
-                                        .findById(tagId)
-                                        .orElseThrow()
-                        )
-                        .collect(Collectors.toSet());
+            post.setUser(user);
+        }
 
-        post.setTags(tags);
+        if (dto.getTagIds() != null) {
+            Set<Tag> tags = dto.getTagIds()
+                    .stream()
+                    .map(id -> tagRepository.findById(id).orElseThrow())
+                    .collect(Collectors.toSet());
+
+            post.setTags(tags);
+        }
 
         postRepository.save(post);
 
@@ -92,23 +89,22 @@ public class PostService {
                 post
         );
 
-        User user = userRepository
-                .findById(dto.getUserId())
-                .orElseThrow();
+        if (dto.getUserId() != null) {
+            User user = userRepository
+                    .findById(dto.getUserId())
+                    .orElseThrow();
 
-        post.setUser(user);
+            post.setUser(user);
+        }
 
-        Set<Tag> tags =
-                dto.getTagIds()
-                        .stream()
-                        .map(tagId ->
-                                tagRepository
-                                        .findById(tagId)
-                                        .orElseThrow()
-                        )
-                        .collect(Collectors.toSet());
+        if (dto.getTagIds() != null) {
+            Set<Tag> tags = dto.getTagIds()
+                    .stream()
+                    .map(tagId -> tagRepository.findById(tagId).orElseThrow())
+                    .collect(Collectors.toSet());
 
-        post.setTags(tags);
+            post.setTags(tags);
+        }
 
         postRepository.save(post);
 
@@ -147,7 +143,7 @@ public class PostService {
 
         var posts = postRepository.findAll(
                 spec,
-                PageRequest.of(page - 1, 10)
+                PageRequest.of(Math.max(page, 0), 10)
         );
 
         return posts.map(postMapper::toDTO);

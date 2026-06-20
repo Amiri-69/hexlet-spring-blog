@@ -66,13 +66,9 @@ public class PostController {
 
     // CREATE post
     @PostMapping
-    public ResponseEntity<PostDTO> create(
-            @RequestBody PostCreateDTO dto
-    ) {
-
-        return ResponseEntity.ok(
-                postService.create(dto)
-        );
+    @ResponseStatus(HttpStatus.CREATED)
+    public PostDTO create(@RequestBody PostCreateDTO dto) {
+        return postService.create(dto);
     }
 
     // UPDATE post

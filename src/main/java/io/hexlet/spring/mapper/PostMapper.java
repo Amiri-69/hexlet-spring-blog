@@ -39,6 +39,11 @@ public interface PostMapper {
             @MappingTarget Post post
     );
     default Set<Long> mapTags(Set<Tag> tags) {
+
+        if (tags == null) {
+            return Set.of();
+        }
+
         return tags.stream()
                 .map(Tag::getId)
                 .collect(Collectors.toSet());
